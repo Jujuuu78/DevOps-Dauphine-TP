@@ -48,32 +48,51 @@ Nous allons créer les ressources suivantes à l'aide de Terraform :
       ```
 4. Lancer `terraform plan`, vérifier les changements puis appliquer les changements avec `terraform apply`
 5. Vérifier que notre utilisateur existe bien : https://console.cloud.google.com/sql/instances/main-instance/users (veiller à bien séléctionner le projet GCP sur lequel vous avez déployé vos ressources)
+![capture-utilisateurs](images/capture-utilisateurs.png)
 6. Rendez-vous sur https://console.cloud.google.com/sql/instances/main-instance/databases. Quelles sont les base de données présentes sur votre instance `main-instance` ? Quels sont les types ?
+![capture-base-de-donnees](images/capture-base-de-donnees.png)
 
 ## Partie 2 : Docker
 
 Wordpress dispose d'une image Docker officielle disponible sur [DockerHub](https://hub.docker.com/_/wordpress)
 
 1. Récupérer l'image sur votre machine (Cloud Shell)
+![capture-image-wordpress](images/capture-image-wordpress.png)
 
 2. Lancer l'image docker et ouvrez un shell à l'intérieur de votre container:
    1. Quel est le répertoire courant du container (WORKDIR) ?
+   ![capture-repertoire-courant-container](images/capture-repertoire-courant-container.png)
+   => Le répertoire courant est : /var/www/html
+
    2. Quelles sont les différents fichiers html contenu dans WORKDIR ?
+   ![capture-fichiers-html](images/capture-fichiers-html.png)
 
 3. Supprimez le container puis relancez en un en spécifiant un port binding (une correspondance de port).
 
    1. Vous devez pouvoir communiquer avec le port par défaut de wordpress : **80** (choisissez un port entre 8000 et 9000 sur votre machine hôte => cloudshell)
 
    2. Avec la commande `curl`, faites une requêtes depuis votre machine hôte à votre container wordpress. Quelle est la réponse ? (il n'y a pas piège, essayez sur un port non utilisé pour constater la différence)
+   ![capture-curl](images/capture-curl.png)
 
    3. Afficher les logs de votre container après avoir fait quelques requêtes, que voyez vous ?
+   ![capture-logs](images/capture-logs.png)
+
    4. Utilisez l'aperçu web pour afficher le résultat du navigateur qui se connecte à votre container wordpress
       1. Utiliser la fonction `Aperçu sur le web`
         ![web_preview](images/wordpress_preview.png)
       2. Modifier le port si celui choisi n'est pas `8000`
       3. Une fenètre s'ouvre, que voyez vous ?
+   ![capture-fenetre-web](images/capture-fenetre-web.png)
 
 4. A partir de la documentation, remarquez les paramètres requis pour la configuration de la base de données.
+
+Réponse : wp-config.php :
+DB_NAME,
+DB_USER,
+DB_PASSWORD,
+DB_HOST,
+DB_CHARSET,
+DB_COLLATE
 
 5. Dans la partie 1 du TP (si pas déjà fait), nous allons créer cette base de donnée. Dans cette partie 2 nous allons créer une image docker qui utilise des valeurs spécifiques de paramètres pour la base de données.
    1. Créer un Dockerfile
@@ -84,11 +103,13 @@ Wordpress dispose d'une image Docker officielle disponible sur [DockerHub](https
         - `WORDPRESS_DB_HOST=0.0.0.0`
    3. Construire l'image docker.
    4. Lancer une instance de l'image, ouvrez un shell. Vérifier le résultat de la commande `echo $WORDPRESS_DB_PASSWORD`
+   ![capture-instance-image](images/capture-instance-image.png)
 
 6. Pipeline d'Intégration Continue (CI):
    1. Créer un dépôt de type `DOCKER` sur artifact registry (si pas déjà fait, sinon utiliser celui appelé `website-tools`)
    2. Créer une configuration cloudbuild pour construire l'image docker et la publier sur le depôt Artifact Registry
    3. Envoyer (`submit`) le job sur Cloud Build et vérifier que l'image a bien été créée
+   ![capture-image-depot-cloud-build](images/capture-image-depot-cloud-build.png)
 
 ## Partie 3 : Déployer Wordpress sur Cloud Run puis Kubernetes 🔥
 
@@ -103,6 +124,7 @@ Notre but, ne l'oublions pas est de déployer wordpress sur Cloud Run puis Kuber
 
 2. Reprendre le Dockerfile de la [Partie 2](#partie-2--docker) et le modifier pour que `WORDPRESS_DB_HOST` soit défini avec l'`Adresse IP publique` de notre instance de base de donnée.
 3. Reconstruire notre image docker et la pousser sur notre Artifact Registry en utilisant cloud build
+   ![capture-reconstruction-image-depot-cloud](images/capture-reconstruction-image-depot-cloud.png)
 
 ### Déployer notre image docker sur Cloud Run
 
@@ -132,11 +154,18 @@ Notre but, ne l'oublions pas est de déployer wordpress sur Cloud Run puis Kuber
    ☝️ Vous aurez besoin d'activer l'API : `run.googleapis.com` pour créer la ressource de type `google_cloud_run_service`. Faites en sorte que l'API soit activé avant de créer votre instance Cloud Run 😌
 
    Appliquer les changements sur votre projet gcp avec les commandes terraform puis rendez vous sur https://console.cloud.google.com/run pendant le déploiement.
+   ![capture-cloud-run](images/capture-cloud-run.png)
 
 2. Observer les journaux de Cloud Run (logs) sur : https://console.cloud.google.com/run/detail/us-central1/serveur-wordpress/logs.
    1. Véirifer la présence de l'entrée `No 'wp-config.php' found in /var/www/html, but 'WORDPRESS_...' variables supplied; copying 'wp-config-docker.php' (WORDPRESS_DB_HOST WORDPRESS_DB_PASSWORD WORDPRESS_DB_USER)`
+   ![capture-presence-entree](images/capture-presence-entree.png)
+
    2. Au bout de 5 min, que se passe-t-il ? 🤯🤯🤯
+   
+   Réponse : rien de spécial
+
    3. Regarder le resultat de votre commande `terraform apply` et observer les logs de Cloud Run
+   ![capture-logs-cloud-run](images/capture-logs-cloud-run.png)
 
 3. Autoriser toutes les adresses IP à se connecter à notre base MySQL (sous réserve d'avoir l'utilisateur et le mot de passe évidemment)
    1. Pour le faire, exécuter la commande
@@ -149,6 +178,8 @@ Notre but, ne l'oublions pas est de déployer wordpress sur Cloud Run puis Kuber
    1. Aller sur : https://console.cloud.google.com/run/detail/us-central1/serveur-wordpress/metrics?
    2. Cliquer sur l'URL de votre Cloud Run : similaire à https://serveur-wordpress-oreldffftq-uc.a.run.app
    3. Que voyez vous ? 🙈
+   ![capture-url-cloud-run](images/capture-url-cloud-run.png)
+   ![capture-url-cloud-run-2](images/capture-url-cloud-run-2.png)
 
 
 6. Afin d'avoir un déploiement plus robuste pour l'entreprise et économiser les coûts du service CloudSQL, nous allons déployer Wordpress sur Kubernetes
