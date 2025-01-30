@@ -29,4 +29,15 @@ steps:
       - |
         docker push $_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME:$_TAG
 
+  # Étape Terraform : Init, Plan et Apply
+  - name: 'hashicorp/terraform:latest'
+    id: 'Terraform Init and Apply'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        cd terraform/environments/dev
+        terraform init
+        terraform plan
+        terraform apply -auto-approve
 

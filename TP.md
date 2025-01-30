@@ -212,7 +212,31 @@ Notre but, ne l'oublions pas est de déployer wordpress sur Cloud Run puis Kuber
 ## BONUS : Partie 4
 
 1. Utiliser Cloud Build pour appliquer les changements d'infrastructure
+```
+Réponse : Il faut ajouter ça dans ci.yml
+
+  - name: 'hashicorp/terraform:latest'
+    id: 'Terraform Init and Apply'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        cd terraform/environments/dev
+        terraform init
+        terraform plan
+        terraform apply -auto-approve
+```
+
 2. Quelles critiques du TP pouvez vous faire ? Quels sont les éléments redondants de notre configuration ?
    1. Quels paramètres avons nous dû recopier plusieurs fois ? Comment pourrions nous faire pour ne pas avoir à les recopier ?
+
+Réponse : Plusieurs paramètres sont recopiés plusieurs fois comme la region, l'id du projet, le nom de l'image, le nom de la base de données, le mot de passe de la base de données, ...
+Pour ne pas avoir à les recopier, on peut définir ces valeurs dans des variables et à chaque fois on appelle ces variables au lieu de mettre la valeur directement (c'est ce que j'ai fais dès le début)
+
    2. Quel outil pouvons nous utiliser pour déployer Wordpress sur Kubernetes ? Faites les changements nécessaires dans votre code Terraform.
+
+Réponse : Pour déployer Wordpress sur Kubernetes, on peut utiliser Helm.
+
    3. Comment pourrions nous enlever le mot de passe en clair dans notre code Terraform ? Quelle ressource Kubernetes pouvons nous utiliser pour le stocker ? Faites les changements nécessaires dans votre code Terraform.
+
+Réponse : On peut stocker les secrets dans Kubernetes Secrets.
